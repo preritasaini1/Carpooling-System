@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 
 import authRoutes from "./routes/auth.routes.js";
+import rideRoutes from "./routes/ride.routes.js";
 import notFound from "./middlewares/notFound.middleware.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
@@ -37,6 +38,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/rides", rideRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

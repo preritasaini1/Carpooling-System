@@ -78,38 +78,69 @@ export const getMyRides = async (req, res, next) => {
 
 export const searchRides = async (req, res, next) => {
   try {
-    const { pickupCity, dropCity, seats, status, date } = req.query;
+    const {
+      pickupCity,
+      dropCity,
+      date,
+      fromTime,
+      toTime,
+      seats,
+      status,
+      femaleOnly,
+      petsAllowed,
+      musicAllowed,
+    } = req.query;
 
-    const query = {};
-
-    if (pickupCity) {
-      query["pickup.city"] = { $regex: pickupCity, $options: "i" };
+    if (!pickupCity || !dropCity || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "pickupCity, dropCity, and date are required to search rides",
+      });
     }
 
-    if (dropCity) {
-      query["drop.city"] = { $regex: dropCity, $options: "i" };
-    }
+    const query = {
+      "pickup.city": { $regex: pickupCity, $options: "i" },
+      "drop.city": { $regex: dropCity, $options: "i" },
+      status: status || "open",
+    };
 
     if (seats) {
       query.availableSeats = { $gte: Number(seats) };
     }
 
-    if (status) {
-      query.status = status;
+    if (femaleOnly !== undefined) {
+      query["preferences.femaleOnly"] = femaleOnly === "true";
+    }
+
+    if (petsAllowed !== undefined) {
+      query["preferences.petsAllowed"] = petsAllowed === "true";
+    }
+
+    if (musicAllowed !== undefined) {
+      query["preferences.musicAllowed"] = musicAllowed === "true";
+    }
+
+    let startDateTime;
+    let endDateTime;
+
+    if (fromTime && toTime) {
+      startDateTime = new Date(`${date}T${fromTime}:00`);
+      endDateTime = new Date(`${date}T${toTime}:00`);
+    } else if (fromTime) {
+      startDateTime = new Date(`${date}T${fromTime}:00`);
+      endDateTime = new Date(`${date}T23:59:59`);
+    } else if (toTime) {
+      startDateTime = new Date(`${date}T00:00:00`);
+      endDateTime = new Date(`${date}T${toTime}:00`);
     } else {
-      query.status = "open";
+      startDateTime = new Date(`${date}T00:00:00`);
+      endDateTime = new Date(`${date}T23:59:59`);
     }
 
-    if (date) {
-      const start = new Date(date);
-      const end = new Date(date);
-      end.setDate(end.getDate() + 1);
-
-      query.departureTime = {
-        $gte: start,
-        $lt: end,
-      };
-    }
+    query.departureTime = {
+      $gte: startDateTime,
+      $lte: endDateTime,
+    };
 
     const rides = await Ride.find(query)
       .populate("driver", "fullName email role")

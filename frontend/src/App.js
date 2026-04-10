@@ -5,6 +5,8 @@ import BookRide from './pages/BookRide';
 import RideResults from './pages/RideResults';
 import OfferRide from './pages/OfferRide';
 import MyRides from './pages/MyRides';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 import './styles/globals.css';
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
         <Route path="/rides/results" element={<RideResults />} />
         <Route path="/offer" element={<OfferRide />} />
         <Route path="/my-rides" element={<MyRides />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
     </Router>
   );

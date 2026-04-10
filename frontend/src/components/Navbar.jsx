@@ -1,17 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Car, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const [dropOpen, setDropOpen] = useState(false);
   const dropRef = useRef(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('carpooler_user');
-    if (stored) setUser(JSON.parse(stored));
-  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -20,9 +16,8 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem('carpooler_user');
-    setUser(null);
+  const handleLogout = () => {
+    logout();
     setDropOpen(false);
     navigate('/');
   };
@@ -89,7 +84,7 @@ export default function Navbar() {
                   ))}
 
                   <div style={{ borderTop: '2px solid #f0f0f0' }}>
-                    <button onClick={logout} className="drop-item"
+                    <button onClick={handleLogout} className="drop-item"
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', border: 'none', background: '#fff', cursor: 'pointer', color: '#dc2626', fontSize: '0.88rem', fontWeight: 600, fontFamily: 'Space Grotesk, sans-serif', transition: 'background 0.12s', textAlign: 'left' }}>
                       <LogOut size={14} /> Sign Out
                     </button>

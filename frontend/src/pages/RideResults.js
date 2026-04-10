@@ -36,7 +36,9 @@ export default function RideResults() {
       return b.match - a.match;
     });
 
-  const handleBook = (ride) => { setSelectedRide(ride); setBooked(false); };
+  const handleBook = (ride) => {
+  navigate('/book', { state: { ride } });
+};
   const confirmBook = () => setBooked(true);
 
   return (

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, Calendar, Clock, ChevronDown } from 'lucide-react';
+import { rideAPI } from '../services/api';
 
 const INDIAN_CITIES = [
   'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata',
@@ -76,12 +77,24 @@ export default function BookRide() {
   const [seats, setSeats] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!from || !to) return;
     setLoading(true);
-    setTimeout(() => {
-      navigate('/rides/results', { state: { from, to, date, time, seats } });
-    }, 800);
+    try {
+      const response = await rideAPI.searchRides({ 
+        pickupCity: from, 
+        dropCity: to, 
+        date, 
+        fromTime: time,
+        seats 
+      });
+      navigate('/rides/results', { state: { from, to, date, time, seats, rides: response.data.rides } });
+    } catch (error) {
+      console.error('Search error:', error);
+      alert(error.response?.data?.message || 'Error searching for rides');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -56,9 +56,9 @@ export default function Navbar() {
               <button onClick={() => setDropOpen(p => !p)}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', background: dropOpen ? '#f9ffe0' : '#fff', border: `2px solid ${dropOpen ? '#D4F53C' : '#e8e8e8'}`, borderRadius: '10px', padding: '6px 10px 6px 6px', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'Space Grotesk, sans-serif' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#D4F53C', border: '2px solid #0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '0.7rem' }}>
-                  {user.initials}
+                  {user.initials || (user.fullName || user.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase()}
                 </div>
-                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#0a0a0a' }}>{user.name.split(' ')[0]}</span>
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#0a0a0a' }}>{(user.fullName || user.name || '').split(' ')[0] || 'User'}</span>
                 <ChevronDown size={14} color="#888" style={{ transform: dropOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
 
@@ -66,7 +66,7 @@ export default function Navbar() {
                 <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#fff', border: '2px solid #e8e8e8', borderRadius: '16px', minWidth: '200px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', overflow: 'hidden', animation: 'dropIn 0.15s ease', zIndex: 200 }}>
                   {/* User info */}
                   <div style={{ padding: '14px 16px', borderBottom: '2px solid #f0f0f0', background: '#f9ffe0' }}>
-                    <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0a0a0a' }}>{user.name}</p>
+                    <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0a0a0a' }}>{user.fullName || user.name || 'User'}</p>
                     <p style={{ fontSize: '0.78rem', color: '#888', marginTop: '2px' }}>{user.email}</p>
                     {user.rating && (
                       <p style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', fontWeight: 600 }}>⭐ {user.rating} · {user.totalRides} rides</p>

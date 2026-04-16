@@ -1,13 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MapPin, Clock, Star, Users, Wind, Music, Zap, PawPrint, ChevronDown, SlidersHorizontal, ArrowLeft } from 'lucide-react';
-
-const MOCK_RIDES = [
-  { id: 1, driver: 'Rahul S.', rating: 4.9, reviews: 128, from: 'Mathura', to: 'Delhi', departure: '07:30 AM', arrival: '10:00 AM', seats: 3, price: 350, car: 'Swift Dzire • White', amenities: ['ac', 'music', 'charging'], verified: true, match: 97 },
-  { id: 2, driver: 'Priya M.', rating: 4.7, reviews: 89, from: 'Mathura', to: 'Delhi', departure: '09:00 AM', arrival: '11:45 AM', seats: 2, price: 300, car: 'Honda City • Silver', amenities: ['ac', 'music'], verified: true, match: 91 },
-  { id: 3, driver: 'Arun K.', rating: 4.5, reviews: 54, from: 'Mathura', to: 'Delhi', departure: '11:30 AM', arrival: '02:30 PM', seats: 4, price: 280, car: 'Maruti Ertiga • Grey', amenities: ['ac', 'pets'], verified: false, match: 85 },
-  { id: 4, driver: 'Sneha P.', rating: 4.8, reviews: 201, from: 'Mathura', to: 'Delhi', departure: '06:00 AM', arrival: '08:30 AM', seats: 1, price: 400, car: 'Toyota Innova • Black', amenities: ['ac', 'music', 'charging', 'pets'], verified: true, match: 99 },
-];
+import { rideAPI } from '../services/api';
 
 const AMENITY_ICONS = { ac: <Wind size={14} />, music: <Music size={14} />, charging: <Zap size={14} />, pets: <PawPrint size={14} /> };
 const AMENITY_LABELS = { ac: 'AC', music: 'Music', charging: 'Charging', pets: 'Pets OK' };
@@ -17,18 +11,41 @@ export default function RideResults() {
   const navigate = useNavigate();
   const from = state?.from || 'Mathura';
   const to = state?.to || 'Delhi';
-
+  
+  const [rides, setRides] = useState(state?.rides || []);
+  const [loading, setLoading] = useState(!state?.rides);
+  const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('match');
   const [filterAmenities, setFilterAmenities] = useState([]);
   const [minSeats, setMinSeats] = useState(1);
   const [selectedRide, setSelectedRide] = useState(null);
   const [booked, setBooked] = useState(false);
 
+  // Fetch rides if not passed via state
+  useEffect(() => {
+    if (state?.rides) {
+      setRides(state.rides);
+      setLoading(false);
+    } else if (loading) {
+      const fetchRides = async () => {
+        try {
+          const response = await rideAPI.searchRides({ pickupCity: from, dropCity: to });
+          setRides(response.data.rides || []);
+        } catch (err) {
+          setError(err.response?.data?.message || 'Failed to fetch rides');
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchRides();
+    }
+  }, [state?.rides, from, to, loading]);
+
   const toggleAmenity = a => setFilterAmenities(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
 
-  const filtered = MOCK_RIDES
+  const filtered = rides
     .filter(r => r.seats >= minSeats)
-    .filter(r => filterAmenities.every(a => r.amenities.includes(a)))
+    .filter(r => filterAmenities.every(a => r.amenities?.includes(a)))
     .sort((a, b) => {
       if (sortBy === 'price') return a.price - b.price;
       if (sortBy === 'rating') return b.rating - a.rating;
@@ -37,9 +54,8 @@ export default function RideResults() {
     });
 
   const handleBook = (ride) => {
-  navigate('/book', { state: { ride } });
-};
-  const confirmBook = () => setBooked(true);
+    navigate('/book', { state: { ride } });
+  };
 
   return (
     <>
@@ -252,7 +268,7 @@ export default function RideResults() {
                     onMouseLeave={e => e.currentTarget.style.borderColor = '#e8e8e8'}>
                     Cancel
                   </button>
-                  <button onClick={confirmBook}
+                  <button onClick={() => { setBooked(true); handleBook(selectedRide); }}
                     style={{ flex: 2, padding: '13px', background: '#D4F53C', border: '2px solid #0a0a0a', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontFamily: 'Syne, sans-serif', fontSize: '0.95rem', boxShadow: '3px 3px 0px #0a0a0a', transition: 'transform 0.1s' }}
                     onMouseEnter={e => e.currentTarget.style.transform = 'translate(-1px,-1px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'translate(0,0)'}>

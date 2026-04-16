@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MapPin, Calendar, Clock, Star, ChevronRight,
@@ -6,37 +6,12 @@ import {
   Bookmark, BookmarkCheck, Phone, MessageCircle,
   XCircle, CheckCircle, AlertCircle, TrendingUp, IndianRupee
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { rideAPI, bookingAPI } from '../services/api';
 
 const AMENITY_ICONS = {
   ac: <Wind size={12} />, music: <Music size={12} />,
   charging: <Zap size={12} />, pets: <PawPrint size={12} />
-};
-
-const MOCK_DATA = {
-  user: { name: 'John Doe', email: 'john.doe@example.com', rating: 4.8, totalRides: 12, initials: 'JD' },
-
-  upcoming: [
-    { id: 1, from: 'Mumbai', to: 'Pune', date: 'Apr 10, 2026', time: '06:30 AM', status: 'confirmed', price: 450, driver: 'Rahul S.', driverRating: 4.9, car: 'Swift Dzire • White', amenities: ['ac', 'music'], seats: 1 },
-    { id: 2, from: 'Delhi', to: 'Jaipur', date: 'Apr 12, 2026', time: '07:00 AM', status: 'pending', price: 600, driver: 'Priya M.', driverRating: 4.7, car: 'Honda City • Silver', amenities: ['ac'], seats: 2 },
-    { id: 3, from: 'Agra', to: 'Lucknow', date: 'Apr 18, 2026', time: '09:15 AM', status: 'confirmed', price: 520, driver: 'Arun K.', driverRating: 4.6, car: 'Maruti Ertiga • Grey', amenities: ['ac', 'charging'], seats: 1 },
-  ],
-
-  history: [
-    { id: 4, from: 'Mathura', to: 'Delhi', date: 'Mar 28, 2026', time: '08:00 AM', status: 'completed', price: 350, driver: 'Sneha P.', driverRating: 4.8, car: 'Toyota Innova • Black', amenities: ['ac', 'music', 'charging'], myRating: 5 },
-    { id: 5, from: 'Delhi', to: 'Chandigarh', date: 'Mar 15, 2026', time: '06:00 AM', status: 'completed', price: 800, driver: 'Vikram T.', driverRating: 4.5, car: 'Honda Amaze • Red', amenities: ['ac'], myRating: 4 },
-    { id: 6, from: 'Jaipur', to: 'Ahmedabad', date: 'Feb 20, 2026', time: '05:30 AM', status: 'cancelled', price: 950, driver: 'Meena R.', driverRating: 4.3, car: 'Tata Nexon • Blue', amenities: ['ac', 'music'], myRating: null },
-  ],
-
-  offered: [
-    { id: 7, from: 'Mathura', to: 'Delhi', date: 'Apr 11, 2026', time: '07:30 AM', status: 'active', price: 380, seatsTotal: 3, seatsFilled: 2, amenities: ['ac', 'music', 'charging'], passengers: ['Riya K.', 'Amit S.'] },
-    { id: 8, from: 'Delhi', to: 'Dehradun', date: 'Apr 15, 2026', time: '05:00 AM', status: 'active', price: 700, seatsTotal: 4, seatsFilled: 1, amenities: ['ac'], passengers: ['Pooja M.'] },
-    { id: 9, from: 'Agra', to: 'Mathura', date: 'Mar 30, 2026', time: '10:00 AM', status: 'completed', price: 150, seatsTotal: 3, seatsFilled: 3, amenities: ['ac', 'music'], passengers: ['Rahul D.', 'Neha S.', 'Karan P.'] },
-  ],
-
-  saved: [
-    { id: 10, from: 'Mumbai', to: 'Goa', date: 'May 1, 2026', time: '06:00 AM', price: 1200, driver: 'Raj K.', driverRating: 4.9, car: 'Toyota Innova • White', seats: 3, amenities: ['ac', 'music', 'pets'] },
-    { id: 11, from: 'Delhi', to: 'Manali', date: 'May 10, 2026', time: '05:00 AM', price: 1500, driver: 'Arjun S.', driverRating: 4.7, car: 'Mahindra XUV500 • Black', seats: 2, amenities: ['ac', 'charging'] },
-  ],
 };
 
 const STATUS_CONFIG = {
@@ -69,13 +44,15 @@ function StarRow({ rating, size = 13 }) {
 }
 
 // ── TAB: Upcoming ──────────────────────────────────────────────────────────
-function UpcomingTab() {
+function UpcomingTab({ rides = [] }) {
   const [expanded, setExpanded] = useState(null);
   const [cancelled, setCancelled] = useState([]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {MOCK_DATA.upcoming.map((ride, i) => {
+      {rides.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No upcoming rides</div>
+      ) : rides.map((ride, i) => {
         const isExp = expanded === ride.id;
         const isCancelled = cancelled.includes(ride.id);
         return (
@@ -168,10 +145,12 @@ function UpcomingTab() {
 }
 
 // ── TAB: History ───────────────────────────────────────────────────────────
-function HistoryTab() {
+function HistoryTab({ rides = [] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {MOCK_DATA.history.map((ride, i) => (
+      {rides.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No completed rides</div>
+      ) : rides.map((ride, i) => (
         <div key={ride.id} style={{
           background: '#fff', border: '2px solid #e8e8e8', borderRadius: '20px',
           padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
@@ -209,14 +188,16 @@ function HistoryTab() {
 }
 
 // ── TAB: Offered ───────────────────────────────────────────────────────────
-function OfferedTab() {
+function OfferedTab({ rides = [] }) {
   const [expanded, setExpanded] = useState(null);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {MOCK_DATA.offered.map((ride, i) => {
+      {rides.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No offered rides</div>
+      ) : rides.map((ride, i) => {
         const isExp = expanded === ride.id;
-        const fillPct = Math.round((ride.seatsFilled / ride.seatsTotal) * 100);
+        const fillPct = ride.seatsFilled ? Math.round((ride.seatsFilled / ride.seatsTotal) * 100) : 0;
         return (
           <div key={ride.id} style={{
             background: '#fff', border: `2px solid ${isExp ? '#D4F53C' : '#e8e8e8'}`,
@@ -300,13 +281,15 @@ function OfferedTab() {
 }
 
 // ── TAB: Saved ─────────────────────────────────────────────────────────────
-function SavedTab() {
-  const [saved, setSaved] = useState(MOCK_DATA.saved.map(r => r.id));
+function SavedTab({ rides = [] }) {
+  const [saved, setSaved] = useState(rides.map(r => r.id));
   const navigate = useNavigate();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {MOCK_DATA.saved.map((ride, i) => {
+      {rides.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No saved rides</div>
+      ) : rides.map((ride, i) => {
         const isSaved = saved.includes(ride.id);
         return (
           <div key={ride.id} style={{
@@ -390,8 +373,36 @@ function StatsBar() {
 const TABS = ['Upcoming', 'History', 'Offered', 'Saved'];
 
 export default function MyRides() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const { user } = MOCK_DATA;
+  const [rides, setRides] = useState({ upcoming: [], history: [], offered: [], saved: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch rides data
+  useEffect(() => {
+    const fetchRides = async () => {
+      if (!user) return;
+      try {
+        const [myRidesRes, myBookingsRes] = await Promise.all([
+          rideAPI.getMyRides(),
+          bookingAPI.getMyBookings(),
+        ]);
+        setRides({
+          upcoming: myBookingsRes.data.bookings?.filter(b => b.status === 'upcoming') || [],
+          history: myBookingsRes.data.bookings?.filter(b => b.status === 'completed') || [],
+          offered: myRidesRes.data.rides || [],
+          saved: [],
+        });
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRides();
+  }, [user]);
 
   return (
     <>
@@ -454,7 +465,7 @@ export default function MyRides() {
                 {tab}
                 {tab === 'Upcoming' && (
                   <span style={{ marginLeft: '6px', background: activeTab === i ? '#0a0a0a' : '#e8e8e8', color: activeTab === i ? '#D4F53C' : '#888', borderRadius: '999px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700 }}>
-                    {MOCK_DATA.upcoming.length}
+                    {rides.upcoming?.length || 0}
                   </span>
                 )}
               </button>
@@ -463,10 +474,10 @@ export default function MyRides() {
 
           {/* Tab content */}
           <div key={activeTab} style={{ animation: 'fadeUp 0.25s ease' }}>
-            {activeTab === 0 && <UpcomingTab />}
-            {activeTab === 1 && <HistoryTab />}
-            {activeTab === 2 && <OfferedTab />}
-            {activeTab === 3 && <SavedTab />}
+            {activeTab === 0 && <UpcomingTab rides={rides.upcoming} />}
+            {activeTab === 1 && <HistoryTab rides={rides.history} />}
+            {activeTab === 2 && <OfferedTab rides={rides.offered} />}
+            {activeTab === 3 && <SavedTab rides={rides.saved} />}
           </div>
         </div>
       </div>

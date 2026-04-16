@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Car, AlertCircle, CheckCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const STEPS = ['Account', 'Personal', 'Done'];
 
@@ -40,6 +41,7 @@ function PasswordStrength({ password }) {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '', role: 'both' });
   const [showPass, setShowPass] = useState(false);
@@ -71,7 +73,7 @@ export default function Signup() {
     return e;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 0) {
       const e = validateStep0();
       if (Object.keys(e).length) { setErrors(e); return; }
@@ -80,19 +82,24 @@ export default function Signup() {
       const e = validateStep1();
       if (Object.keys(e).length) { setErrors(e); return; }
       setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        localStorage.setItem('carpooler_user', JSON.stringify({
-          name: form.name,
+      try {
+        const result = await register({
+          fullName: form.name,
           email: form.email,
           phone: form.phone,
-          initials: form.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2),
-          rating: 5.0,
-          totalRides: 0,
+          password: form.password,
           role: form.role,
-        }));
+        });
+        console.log('Registration successful:', result);
         setStep(2);
-      }, 1400);
+      } catch (error) {
+        console.error('Registration error:', error);
+        const errorMsg = error.response?.data?.message || error.message || 'Registration failed';
+        console.log('Error message:', errorMsg);
+        setErrors({ submit: errorMsg });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -259,6 +266,14 @@ export default function Signup() {
             {/* ── STEP 1: Password ── */}
             {step === 1 && (
               <div style={{ animation: 'stepIn 0.3s ease' }}>
+
+                {/* Error Alert */}
+                {errors.submit && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fff1f0', border: '2px solid #fecaca', borderRadius: '10px', padding: '10px 14px', marginBottom: '1.25rem', animation: 'shake 0.4s ease' }}>
+                    <AlertCircle size={15} color="#dc2626" />
+                    <span style={{ fontSize: '0.85rem', color: '#dc2626', fontWeight: 500 }}>{errors.submit}</span>
+                  </div>
+                )}
 
                 {/* Password */}
                 <div style={{ marginBottom: '1rem' }}>

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Car, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,7 +17,7 @@ export default function Login() {
     setError('');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.email || !form.password) {
       setError('Please fill in all fields.');
       return;
@@ -24,19 +26,16 @@ export default function Login() {
       setError('Please enter a valid email address.');
       return;
     }
+    
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      // Store mock user in localStorage
-      localStorage.setItem('carpooler_user', JSON.stringify({
-        name: 'John Doe',
-        email: form.email,
-        initials: 'JD',
-        rating: 4.8,
-        totalRides: 12,
-      }));
+    try {
+      await login({ email: form.email, password: form.password });
       navigate('/');
-    }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyDown = e => { if (e.key === 'Enter') handleSubmit(); };

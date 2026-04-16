@@ -63,7 +63,7 @@ export default function BookingFlow() {
   // ── Razorpay handler ──
   const handleRazorpay = () => {
     const options = {
-      key: 'rzp_test_SbkBJbW4qAoYJu', // ← Replace with your Razorpay key
+      key: 'rzp_test_Se3q33M9A5OarV', 
       amount: ride.price * 100, // paise
       currency: 'INR',
       name: 'CarPooler',

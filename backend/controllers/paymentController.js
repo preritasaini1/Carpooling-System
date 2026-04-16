@@ -1,10 +1,12 @@
-import razorpay from "../utils/razorpay.js";
+import getRazorpayInstance from "../utils/razorpay.js";
 import Payment from "../models/Payment.js";
 import crypto from "crypto";
 
 export const createPayment = async (req, res) => {
   try {
     const { amount, rideId } = req.body;
+
+    const razorpay = getRazorpayInstance(); // ✅ ADD THIS
 
     const order = await razorpay.orders.create({
       amount: amount * 100,

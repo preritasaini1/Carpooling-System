@@ -19,22 +19,21 @@ export const createRide = async (req, res, next) => {
       });
     }
 
-    const ride = await Ride.create({
-      driver: req.userId,
-      pickup,
-      drop,
-      departureTime,
-      availableSeats,
-      pricePerSeat,
-      vehicleDetails,
-      preferences,
-    });
+    const rides = await Ride.find(query)
+  .populate("driver", "fullName email role");
 
-    res.status(201).json({
-      success: true,
-      message: "Ride created successfully",
-      ride,
-    });
+
+  const matchedRides = matchRides(rides, {
+    pickup: pickupCity,
+    drop: dropCity,
+    time: startDateTime
+  });
+
+  res.status(200).json({
+    success: true,
+    count: matchedRides.length,
+    rides: matchedRides,
+  });
   } catch (error) {
     next(error);
   }

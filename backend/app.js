@@ -10,6 +10,10 @@ import rideRoutes from "./routes/ride.routes.js";
 import notFound from "./middlewares/notFound.middleware.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
+import paymentRoutes from "./routes/paymentRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+
+
 const app = express();
 
 app.use(helmet());
@@ -39,6 +43,9 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/rides", rideRoutes);
+
+app.use("/api/payments", paymentRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

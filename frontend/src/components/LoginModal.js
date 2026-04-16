@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Mail, Lock, Eye, EyeOff, Car, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import axios from "axios";
 
 export default function LoginModal({ onClose, onSuccess }) {
   const { login } = useAuth();
@@ -14,28 +15,63 @@ export default function LoginModal({ onClose, onSuccess }) {
 
   const set = (k, v) => { setForm(p => ({ ...p, [k]: v })); setError(''); };
 
-  const handleSubmit = () => {
-    if (!form.email || !form.password) { setError('Please fill in all fields.'); return; }
-    if (!/\S+@\S+\.\S+/.test(form.email)) { setError('Invalid email address.'); return; }
-    if (tab === 'signup' && !form.name.trim()) { setError('Name is required.'); return; }
-    if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+  const handleSubmit = async () => {
+    console.log("BUTTON CLICKED 🔥");
+    if (!form.email || !form.password) {
+      setError('Please fill in all fields.');
+      return;
+    }
 
-    setLoading(true);
-    setTimeout(() => {
-      const userData = {
-        name: tab === 'signup' ? form.name : 'John Doe',
-        email: form.email,
-        initials: (tab === 'signup' ? form.name : 'John Doe').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2),
-        rating: 5.0,
-        totalRides: 0,
-        phone: null,
-        phoneVerified: false,
-      };
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      setError('Invalid email address.');
+      return;
+    }
+
+    if (tab === 'signup' && !form.name.trim()) {
+      setError('Name is required.');
+      return;
+    }
+
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const url =
+        tab === "signup"
+          ? "http://localhost:5000/api/auth/register"
+          : "http://localhost:5000/api/auth/login";
+
+      const payload =
+        tab === "signup"
+          ? {
+              fullName: form.name,
+              email: form.email,
+              password: form.password,
+            }
+          : {
+              email: form.email,
+              password: form.password,
+            };
+
+      const res = await axios.post(url, payload);
+
+      const userData = res.data.user;
+
       login(userData);
-      setLoading(false);
+
       if (onSuccess) onSuccess(userData);
       else onClose();
-    }, 1000);
+
+    } catch (error) {
+      console.error(error);
+      setError(error.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = (name) => ({
